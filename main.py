@@ -56,6 +56,8 @@ origins = [
     "http://localhost:5174",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
+    "https://scorexpert.up.railway.app/",
+    "https://scorexpert.up.railway.app"
 ]
 
 app.add_middleware(
