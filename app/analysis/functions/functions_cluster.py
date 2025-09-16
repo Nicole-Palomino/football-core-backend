@@ -9,8 +9,9 @@ import functools
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 from typing import Dict
 
 from app.analysis.functions import get_data
@@ -31,17 +32,43 @@ def encontrar_k_optimo(df: pd.DataFrame, k_min: int = 2, k_max: int = 6):
     resultados = []
 
     for k in range(k_min, k_max + 1):
-        _, modelo, scaler = aplicar_kmeans(df.copy(), n_clusters=k)
+        df_clusterizado, modelo, scaler = aplicar_kmeans(df.copy(), n_clusters=k)
         sse = modelo.inertia_
         sst = np.sum((scaler.transform(df) - scaler.transform(df).mean(axis=0)) ** 2)
         pseudo_r2 = 1 - (sse / sst)
-        resultados.append({"n_clusters": k, "pseudo_r2": pseudo_r2})
+
+        # ⚠️ Silhouette solo se puede calcular si hay más de 1 cluster y menos que el número de filas
+        try:
+            etiquetas = df_clusterizado["cluster"].values
+            if 1 < k < len(df):
+                silhouette = silhouette_score(scaler.transform(df), etiquetas)
+            else:
+                silhouette = None
+        except Exception as e:
+            silhouette = None
+            print(f"⚠️ Error al calcular Silhouette para k={k}: {e}")
+
+        resultados.append({
+            "n_clusters": k,
+            "pseudo_r2": pseudo_r2,
+            "silhouette": silhouette
+        })
 
     df_resultados = pd.DataFrame(resultados)
+    print("📊 Resultados búsqueda de k:")
     print(df_resultados)
 
-    # Elegir el k con mayor pseudo R²
-    k_optimo = df_resultados.sort_values(by="pseudo_r2", ascending=False).iloc[0]["n_clusters"]
+    # Elegir el k con mejor balance → primero silhouette, luego pseudo R²
+    df_validos = df_resultados.dropna(subset=["silhouette"])
+    if not df_validos.empty:
+        k_optimo = df_validos.sort_values(
+            by=["silhouette", "pseudo_r2"],
+            ascending=[False, False]
+        ).iloc[0]["n_clusters"]
+    else:
+        # Si no se puede calcular silhouette, usar solo pseudo R²
+        k_optimo = df_resultados.sort_values(by="pseudo_r2", ascending=False).iloc[0]["n_clusters"]
+
     return int(k_optimo), df_resultados
 
 # used in analizar_clusters_partidos_entre_equipos
@@ -75,10 +102,10 @@ def preparar_dataset_para_kmeans(df: pd.DataFrame) -> pd.DataFrame:
 
 # used in analizar_clusters_partidos_entre_equipos
 def aplicar_kmeans(df: pd.DataFrame, n_clusters: int = 3):
-    scaler = StandardScaler()
+    scaler = RobustScaler()
     X_scaled = scaler.fit_transform(df)
 
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init='auto')
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=50)
     etiquetas = kmeans.fit_predict(X_scaled)
 
     df['cluster'] = etiquetas

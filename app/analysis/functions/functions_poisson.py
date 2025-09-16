@@ -87,7 +87,7 @@ def matriz_score_exacto(goles_local_esp: float, goles_visitante_esp: float, max_
 
 # used in poisson.py
 def entrenar_modelo_poisson(df: pd.DataFrame, target: str, equipo: str, correlacion_umbral: float = 0.95):
-    columnas = [ f"goles_{equipo}",
+    columnas = [
         f"tiros_{equipo}", f"tiros_arco_{equipo}",
         f"corners_{equipo}", f"faltas_{equipo}",
         f"amarillas_{equipo}", f"rojas_{equipo}"
@@ -128,13 +128,12 @@ def entrenar_modelo_poisson(df: pd.DataFrame, target: str, equipo: str, correlac
 # used in poisson.py
 def predecir_goles(modelo, datos_partido: dict, equipo: str):
     entrada = {
-        f"goles_{equipo}": datos_partido[f"goles_{equipo}"],
-        f"tiros_{equipo}": datos_partido[f"tiros_{equipo}"],
-        f"tiros_arco_{equipo}": datos_partido[f"tiros_arco_{equipo}"],
-        f"corners_{equipo}": datos_partido[f"corners_{equipo}"],
-        f"faltas_{equipo}": datos_partido[f"faltas_{equipo}"],
-        f"amarillas_{equipo}": datos_partido[f"amarillas_{equipo}"],
-        f"rojas_{equipo}": datos_partido[f"rojas_{equipo}"],
+        f"tiros_{equipo}": datos_partido.get(f"tiros_{equipo}", 0),
+        f"tiros_arco_{equipo}": datos_partido.get(f"tiros_arco_{equipo}", 0),
+        f"corners_{equipo}": datos_partido.get(f"corners_{equipo}", 0),
+        f"faltas_{equipo}": datos_partido.get(f"faltas_{equipo}", 0),
+        f"amarillas_{equipo}": datos_partido.get(f"amarillas_{equipo}", 0),
+        f"rojas_{equipo}": datos_partido.get(f"rojas_{equipo}", 0),
     }
 
     df = pd.DataFrame([entrada])

@@ -4,12 +4,10 @@ import os
 import joblib
 import numpy as np
 
-from datetime import datetime
 from pathlib import Path
 from app.analysis.functions import get_data
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score, mean_squared_error
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
 
 # used in verificar_o_entrenar_modelos_estadisticos
 def preparar_dataset_estadistico(df: pd.DataFrame) -> pd.DataFrame:
@@ -94,9 +92,6 @@ def entrenar_modelos_individuales(df: pd.DataFrame) -> dict:
         print("No hay features disponibles para entrenar.")
         return modelos
 
-    # Dividir índices para concordancia entre X e y
-    train_idx, test_idx = train_test_split(X.index, test_size=0.2, random_state=42, shuffle=True)
-
     # Clasificadores
     clasificadores = {
         "resultado": "🎯",
@@ -108,37 +103,29 @@ def entrenar_modelos_individuales(df: pd.DataFrame) -> dict:
     for objetivo, icono in clasificadores.items():
         if objetivo not in df.columns:
             continue
-        y_train_full = df.loc[train_idx, objetivo]
-        y_test_full = df.loc[test_idx, objetivo]
+        y = df[objetivo].dropna()
+        X_obj = X.loc[y.index]
 
-        # Filtrar NaN
-        mask_train = y_train_full.notna()
-        mask_test = y_test_full.notna()
-
-        y_train = y_train_full[mask_train]
-        y_test = y_test_full[mask_test]
-        X_train = X.loc[train_idx[mask_train.values]]
-        X_test = X.loc[test_idx[mask_test.values]]
-
-        if y_train.empty or y_test.empty:
+        if y.empty or y.nunique() < 2:
             print(f"{icono} No hay datos válidos para '{objetivo}', se omite.")
             continue
-        if y_train.nunique() < 2:
-            print(f"{icono} '{objetivo}' tiene una sola clase en entrenamiento ({y_train.unique()}); se omite.")
-            continue
 
-        clf = RandomForestClassifier(n_estimators=100, random_state=42)
+        clf = RandomForestClassifier(
+            n_estimators=200,
+            random_state=42,
+            class_weight="balanced"
+        )
+
         try:
-            clf.fit(X_train, y_train)
-            if not X_test.empty and not y_test.empty:
-                acc = accuracy_score(y_test, clf.predict(X_test))
-                print(f"{icono} Accuracy {objetivo}: {acc:.2f}")
-            else:
-                print(f"{icono} Clasificador '{objetivo}' entrenado sin validación válida.")
+            scores = cross_val_score(clf, X_obj, y, cv=5, scoring="accuracy")
+            print(f"{icono} CV Accuracy {objetivo}: {scores.mean():.3f} ± {scores.std():.3f}")
+
+            # Entrenar con todos los datos para guardar modelo final
+            clf.fit(X_obj, y)
             modelos[objetivo] = clf
         except Exception as e:
             print(f"{icono} Error al entrenar '{objetivo}': {e}")
-
+    
     # Regresores
     regresiones = [
         "goles_local", "goles_visitante",
@@ -151,29 +138,21 @@ def entrenar_modelos_individuales(df: pd.DataFrame) -> dict:
     for target in regresiones:
         if target not in df.columns:
             continue
-        y_train_full = df.loc[train_idx, target]
-        y_test_full = df.loc[test_idx, target]
+        y = df[target].dropna()
+        X_obj = X.loc[y.index]
 
-        mask_train = y_train_full.notna()
-        mask_test = y_test_full.notna()
-
-        y_train = y_train_full[mask_train]
-        y_test = y_test_full[mask_test]
-        X_train = X.loc[train_idx[mask_train.values]]
-        X_test = X.loc[test_idx[mask_test.values]]
-
-        if y_train.empty or y_test.empty:
+        if y.empty:
             print(f"📈 No hay datos válidos para '{target}', se omite.")
             continue
 
-        reg = RandomForestRegressor(n_estimators=100, random_state=42)
+        reg = RandomForestRegressor(n_estimators=200, random_state=42)
+
         try:
-            reg.fit(X_train, y_train)
-            if not X_test.empty and not y_test.empty:
-                mse = mean_squared_error(y_test, reg.predict(X_test))
-                print(f"📈 MSE {target}: {mse:.2f}")
-            else:
-                print(f"📈 Regresor '{target}' entrenado sin validación válida.")
+            scores = cross_val_score(reg, X_obj, y, cv=5, scoring="neg_mean_squared_error")
+            rmse_scores = np.sqrt(-scores)
+            print(f"📈 CV RMSE {target}: {rmse_scores.mean():.2f} ± {rmse_scores.std():.2f}")
+
+            reg.fit(X_obj, y)
             modelos[target] = reg
         except Exception as e:
             print(f"📈 Error al entrenar '{target}': {e}")

@@ -44,24 +44,24 @@ LIGAS_DATA = {
         "logo": "⚪🔴",
         "color": "#4ECDC4"
     },
-    "Serie A": {
-        "equipos": ["Napoli", "AC Milan", "Inter Milan", "Juventus", "AS Roma", 
-                   "Lazio", "Atalanta", "Fiorentina", "Bologna", "Torino"],
-        "logo": "🟢⚪🔴",
-        "color": "#45B7D1"
-    },
-    "Bundesliga": {
-        "equipos": ["Bayern Munich", "Borussia Dortmund", "RB Leipzig", "Union Berlin", "SC Freiburg",
-                   "Bayer Leverkusen", "Eintracht Frankfurt", "Wolfsburg", "Mainz", "Borussia M'gladbach"],
-        "logo": "🔴🟡⚫",
-        "color": "#96CEB4"
-    },
-    "Ligue 1": {
-        "equipos": ["PSG", "Lens", "Marseille", "Rennes", "Monaco", 
-                   "Lille", "Lyon", "Nice", "Clermont", "Toulouse"],
-        "logo": "🔵⚪🔴",
-        "color": "#FFEAA7"
-    }
+    # "Serie A": {
+    #     "equipos": ["Napoli", "AC Milan", "Inter Milan", "Juventus", "AS Roma", 
+    #                "Lazio", "Atalanta", "Fiorentina", "Bologna", "Torino"],
+    #     "logo": "🟢⚪🔴",
+    #     "color": "#45B7D1"
+    # },
+    # "Bundesliga": {
+    #     "equipos": ["Bayern Munich", "Borussia Dortmund", "RB Leipzig", "Union Berlin", "SC Freiburg",
+    #                "Bayer Leverkusen", "Eintracht Frankfurt", "Wolfsburg", "Mainz", "Borussia M'gladbach"],
+    #     "logo": "🔴🟡⚫",
+    #     "color": "#96CEB4"
+    # },
+    # "Ligue 1": {
+    #     "equipos": ["PSG", "Lens", "Marseille", "Rennes", "Monaco", 
+    #                "Lille", "Lyon", "Nice", "Clermont", "Toulouse"],
+    #     "logo": "🔵⚪🔴",
+    #     "color": "#FFEAA7"
+    # }
 }
 
 # used in analysis.py
